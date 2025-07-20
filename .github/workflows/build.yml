@@ -571,7 +571,7 @@ jobs:
         if: ${{ inputs.pong_only_mode == true && inputs.use_pong_ramdisk == false }}
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ inputs.kernelsu_variant }}-kernel-${{ env.CONFIG }}
+          name: ${{ inputs.kernelsu_variant }}-kernel-${{ env.CONFIG }}-CI_#${{ github.run_number }}
           path: |
             *Image*
 
@@ -579,7 +579,7 @@ jobs:
         if: ${{ inputs.pong_only_mode == true && inputs.use_pong_ramdisk == true }}
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ inputs.kernelsu_variant }}-kernel-${{ env.CONFIG }}
+          name: ${{ inputs.kernelsu_variant }}-kernel-${{ env.CONFIG }}-CI_#${{ github.run_number }}
           path: |
             *.img.gz
             *.img
