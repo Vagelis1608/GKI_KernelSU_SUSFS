@@ -16,12 +16,22 @@ on:
       kernelsu_branch_other:
         required: false
         type: string
+        default: ""
       use_make:
         required: true
         type: boolean
+      pong_only_mode:
+        required: false
+        type: boolean
+        default: false
+      use_pong_ramdisk:
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   build-kernels-a12:
+    if: ${{ inputs.pong_only_mode == false }}
     strategy:
       fail-fast: true
       matrix:
@@ -68,4 +78,21 @@ jobs:
       kernelsu_branch: ${{ inputs.kernelsu_branch }}
       kernelsu_branch_other: ${{ inputs.kernelsu_branch_other || '' }}
       use_make: ${{ inputs.use_make }}
-      
+
+  build-pong_only-kernel-a12:
+    if: ${{ inputs.pong_only_mode == true }}
+    strategy:
+      fail-fast: true
+    uses: ./.github/workflows/build.yml
+    secrets: inherit
+    with:
+      android_version: "android12"
+      kernel_version: "5.10"
+      sub_level: "226"
+      os_patch_level: "2024-11"
+      revision: "r8"
+      kernelsu_variant: ${{ inputs.kernelsu_variant }}
+      kernelsu_branch: ${{ inputs.kernelsu_branch }}
+      kernelsu_branch_other: ${{ inputs.kernelsu_branch_other || '' }}
+      pong_only_mode: ${{ inputs.pong_only_mode }}
+      use_pong_ramdisk: ${{ inputs.use_pong_ramdisk }}

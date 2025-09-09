@@ -12,6 +12,16 @@ on:
         required: true
         type: boolean
         default: true
+      pong_only_mode:
+        description: "Only build the gki that the Nothing Phone 2 uses (currently android12-5.10.226)"
+        required: true
+        type: boolean
+        default: true
+      use_pong_ramdisk:
+        description: "Use ramdisk from the pong.img in the repo (ONLY USE WITH THE IMG YOU WANT TO FLASH ALREADY COMMITED TO THE REPO)"
+        required: true
+        type: boolean
+        default: false
       release_type:
         description: "Choose Release Type"
         required: true
@@ -20,7 +30,7 @@ on:
           - Actions
           - Pre-Release
           - Release
-        default: Pre-Release
+        default: Actions
       kernel_variant:
         description: 'Choose Kernel Variant'
         required: true
@@ -29,8 +39,7 @@ on:
           - WKSU
           - KSU
           - NEXT
-        default: WKSU
-
+        default: NEXT
       kernelsu_branch:
         description: "Choose ksu branch"
         required: true
@@ -39,7 +48,7 @@ on:
           - Stable
           - Dev
           - Other
-        default: Dev
+        default: Stable
       kernelsu_branch_other:
         description: "If 'Other' is selected, specify your custom branch"
         required: false
@@ -55,9 +64,12 @@ jobs:
       kernelsu_branch: ${{ inputs.kernelsu_branch }}
       kernelsu_branch_other: ${{ inputs.kernelsu_branch_other }}
       use_make: ${{ inputs.use_make }}
+      pong_only_mode: ${{ inputs.pong_only_mode }}
+      use_pong_ramdisk: ${{ inputs.use_pong_ramdisk }}
 
   build-kernels-a13-5-10:
     uses: ./.github/workflows/kernel-a13-5-10.yml
+    if: ${{ inputs.pong_only_mode == false }}
     secrets: inherit
     with:
       kernelsu_variant: ${{ inputs.kernel_variant }}
@@ -67,6 +79,7 @@ jobs:
 
   build-kernels-a13-5-15:
     uses: ./.github/workflows/kernel-a13-5-15.yml
+    if: ${{ inputs.pong_only_mode == false }}
     secrets: inherit
     with:
       kernelsu_variant: ${{ inputs.kernel_variant }}
@@ -76,6 +89,7 @@ jobs:
 
   build-kernels-a14-5-15:
     uses: ./.github/workflows/kernel-a14-5-15.yml
+    if: ${{ inputs.pong_only_mode == false }}
     secrets: inherit
     with:
       kernelsu_variant: ${{ inputs.kernel_variant }}
@@ -85,6 +99,7 @@ jobs:
 
   build-kernels-a14-6-1:
     uses: ./.github/workflows/kernel-a14-6-1.yml
+    if: ${{ inputs.pong_only_mode == false }}
     secrets: inherit
     with:
       kernelsu_variant: ${{ inputs.kernel_variant }}
@@ -94,6 +109,7 @@ jobs:
 
   build-kernels-a15-6-6:
     uses: ./.github/workflows/kernel-a15-6-6.yml
+    if: ${{ inputs.pong_only_mode == false }}
     secrets: inherit
     with:
       kernelsu_variant: ${{ inputs.kernel_variant }}
@@ -255,19 +271,3 @@ jobs:
         run: |
           echo "GitHub release created with the following files:"
           ls ./downloaded-artifacts/**/*
-            
-      - name: Send Telegram Notification
-        run: |
-          curl -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
-            -F chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
-            -F message_thread_id="${{ secrets.TELEGRAM_TOPIC_ID_GKI }}" \
-            -F text="
-            🌽 *New Kernel Release Uploaded*  
-            📦 *Repository:* [${{ github.repository }}](https://github.com/${{ github.repository }})  
-            ✏️ *Commit:* [${{ github.sha }}](https://github.com/${{ github.repository }}/commit/${{ github.sha }})  
-            
-            📋 *Release Information:*
-            🔧 *KernelSU Variant:* ${{ inputs.kernel_variant }}
-            
-            [🔗 View GitHub Release](https://github.com/${{ github.repository }}/releases/tag/${{ env.NEW_TAG }})" \
-            -F parse_mode="Markdown"

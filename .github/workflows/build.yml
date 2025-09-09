@@ -33,6 +33,14 @@ on:
       revision:
         required: false
         type: string
+      pong_only_mode:
+        required: false
+        type: boolean
+        default: false
+      use_pong_ramdisk:
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   build-gki:
@@ -40,19 +48,23 @@ jobs:
     timeout-minutes: 120
 
     steps:
-      # # - name: Maximize Build Space
-        # uses: AdityaGarg8/remove-unwanted-software@v5
-        # with:
-          # remove-dotnet: 'true'          # Frees ~2 GB
-          # remove-android: 'true'         # Frees ~9 GB
-          # remove-haskell: 'true'         # Frees ~5.2 GB
-          # remove-codeql: 'true'          # Frees ~5.4 GB
-          # remove-docker-images: 'true'   # Frees ~3.2 GB
-          # remove-large-packages: 'true'  # Frees ~3.1 GB
-          # remove-swapfile: 'true'        # Frees ~4 GB
-          # remove-cached-tools: 'false'   # Avoid unless confirmed safe
-          # verbose: 'true'                # Enable detailed logging
-          
+      - name: Checkout repo
+        if: ${{ inputs.pong_only_mode == true }}
+        uses: actions/checkout@v4
+
+      - name: Maximize Build Space
+        uses: AdityaGarg8/remove-unwanted-software@v5
+        with:
+          remove-dotnet: 'true'          # Frees ~2 GB
+          remove-android: 'true'         # Frees ~9 GB
+          remove-haskell: 'true'         # Frees ~5.2 GB
+          remove-codeql: 'true'          # Frees ~5.4 GB
+          remove-docker-images: 'true'   # Frees ~3.2 GB
+          remove-large-packages: 'true'  # Frees ~3.1 GB
+          remove-swapfile: 'true'        # Frees ~4 GB
+          remove-cached-tools: 'false'   # Avoid unless confirmed safe
+          verbose: 'true'                # Enable detailed logging
+
       - name: Set CONFIG Environment Variable
         run: |
           # Set CONFIG dynamically based on inputs values
@@ -392,16 +404,17 @@ jobs:
         if: ${{ inputs.use_make == false }}
         run: |
           cd "$CONFIG"
+
           if [ -f "build/build.sh" ]; then
               perl -pi -e 's/-dirty//' ./common/scripts/setlocalversion
-              perl -0777 -pi -e 's/(echo "\$res")(?!.*echo "\$res")/echo "\$res-${{ inputs.kernelsu_variant }}-\$KSUVER-SUSFS-v1.5.9-Wild"/s' ./common/scripts/setlocalversion
+              perl -0777 -pi -e 's/(echo "\$res")(?!.*echo "\$res")/echo "\$res-${{ inputs.kernelsu_variant }}-SUSFS-Vagelis1608"/s' ./common/scripts/setlocalversion
               perl -pi -e 's{UTS_VERSION="\$\(echo \$UTS_VERSION \$CONFIG_FLAGS \$TIMESTAMP \| cut -b -\$UTS_LEN\)"}{UTS_VERSION="#1 SMP PREEMPT Sun Apr 20 04:20:00 UTC 2025"}' ./common/scripts/mkcompile_h
           else
               #Remove -maybe-dirty
               perl -pi -e 's/-maybe-dirty//g' ./build/kernel/kleaf/impl/stamp.bzl
               
               #Set Kernel Name
-              echo "CONFIG_LOCALVERSION=\"-${{ inputs.kernelsu_variant }}-$KSUVER-SUSFS-v1.5.9-Wild\"" >> ./common/arch/arm64/configs/gki_defconfig
+              echo "CONFIG_LOCALVERSION=\"-${{ inputs.kernelsu_variant }}-SUSFS-Vagelis1608\"" >> ./common/arch/arm64/configs/gki_defconfig
 
               #Set Kernel Timestamp
               perl -pi -e 's/build-timestamp = \$\(or \$\(KBUILD_BUILD_TIMESTAMP\), \$\(build-timestamp-auto\)\)/build-timestamp = "Sun Apr 20 04:20:00 UTC 2025"/' ./common/init/Makefile
@@ -445,6 +458,67 @@ jobs:
       - name: Add Build based configs
         if: ${{ inputs.use_make == true }}
         run: |
+          echo "Creating bootimgs folder and copying images..."
+          if [ "${{ inputs.pong_only_mode }}" == "true" ]; then   # Pong uses an uncompressed Image
+            cp ./$CONFIG/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image ./bootimgs
+            cp ./$CONFIG/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image ./
+          else
+            cp ./$CONFIG/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image ./bootimgs
+            cp ./$CONFIG/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image.lz4 ./bootimgs
+            cp ./$CONFIG/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image ./
+            cp ./$CONFIG/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image.lz4 ./
+
+            # Create gzip of the Image file
+            gzip -n -k -f -9 ./Image > ./Image.gz
+          fi
+
+      - name: Create Bootimgs Folder and Copy Images for Android 14/15
+        if: ${{ inputs.android_version == 'android14' || inputs.android_version == 'android15' }}
+        run: |
+          mkdir bootimgs
+
+          echo "Creating bootimgs folder and copying images..."
+          cp ./$CONFIG/bazel-bin/common/kernel_aarch64/Image ./bootimgs
+          cp ./$CONFIG/bazel-bin/common/kernel_aarch64/Image.lz4 ./bootimgs
+          cp ./$CONFIG/bazel-bin/common/kernel_aarch64/Image ./
+          cp ./$CONFIG/bazel-bin/common/kernel_aarch64/Image.lz4 ./
+
+          # Create gzip of the Image file
+          gzip -n -k -f -9 ./Image > ./Image.gz
+
+      - name: Create ZIP Files for Different Formats
+        if: ${{ inputs.pong_only_mode == false }}
+        run: |
+          echo "Creating zip files for all formats..."
+          cd ./AnyKernel3
+          
+          # Create and upload zip for each format
+          ZIP_NAME="${{ inputs.kernelsu_variant }}-$KSUVER-${{ inputs.android_version }}-${{ inputs.kernel_version }}.${{ inputs.sub_level }}-${{ inputs.os_patch_level }}-AnyKernel3.zip"
+          echo "Creating zip file: $ZIP_NAME..."
+          mv ../Image ./Image
+          zip -r "../$ZIP_NAME" ./*
+          rm ./Image
+          
+          ZIP_NAME="${{ inputs.kernelsu_variant }}-$KSUVER-${{ inputs.android_version }}-${{ inputs.kernel_version }}.${{ inputs.sub_level }}-${{ inputs.os_patch_level }}-AnyKernel3-lz4.zip"
+          echo "Creating zip file: $ZIP_NAME..."
+          mv ../Image.lz4 ./Image.lz4
+          zip -r "../$ZIP_NAME" ./*
+          rm ./Image.lz4
+          
+          ZIP_NAME="${{ inputs.kernelsu_variant }}-$KSUVER-${{ inputs.android_version }}-${{ inputs.kernel_version }}.${{ inputs.sub_level }}-${{ inputs.os_patch_level }}-AnyKernel3-gz.zip"
+          echo "Creating zip file: $ZIP_NAME..."
+          mv ../Image.gz ./Image.gz
+          zip -r "../$ZIP_NAME" ./*
+          rm ./Image.gz
+
+      - name: Android 12 boot image build script
+        if: ${{ inputs.android_version == 'android12' }}
+        run: |
+          if [ "${{ inputs.pong_only_mode == true && inputs.use_pong_ramdisk == false }}" == "true" ]; then
+            echo "Skipping boot img build script"
+            exit 0
+          fi
+          
           echo "Changing to configuration directory: $CONFIG..."
           cd "$CONFIG"
           echo "CONFIG_LTO_CLANG_THIN=y" >> ./common/arch/arm64/configs/gki_defconfig
@@ -545,10 +619,69 @@ jobs:
             MAKE_ARGS="LLVM_IAS=1 $MAKE_ARGS"
           fi
           
-          make -j$(nproc --all) O=out $MAKE_ARGS KCFLAGS+="-Wno-error -O2 -flto=thin -fno-stack-protector" gki_defconfig || exit 1
           make -j$(nproc --all) O=out $MAKE_ARGS KCFLAGS+="-Wno-error -O2 -flto=thin -fno-stack-protector" || exit 1
 
+          cd bootimgs
+          
+          if [ "${{ inputs.pong_only_mode }}" == "true" ]; then
+            echo "Unpacking pong.img..."
+            FULL_PATH=$GITHUB_WORKSPACE/pong.img
+            echo "Unpacking using: $FULL_PATH"
+          else
+            GKI_URL=https://dl.google.com/android/gki/gki-certified-boot-android12-5.10-"${{ inputs.os_patch_level }}"_"${{ inputs.revision }}".zip
+            FALLBACK_URL=https://dl.google.com/android/gki/gki-certified-boot-android12-5.10-2023-01_r1.zip
+
+            # Check if the GKI URL is available
+            echo "Checking if GKI kernel URL is reachable: $GKI_URL"
+            status=$(curl -sL -w "%{http_code}" "$GKI_URL" -o /dev/null)
+          
+            if [ "$status" = "200" ]; then
+                echo "[+] Downloading from GKI_URL"
+                curl -Lo gki-kernel.zip "$GKI_URL"
+            else
+                echo "[+] $GKI_URL not found, using $FALLBACK_URL"
+                curl -Lo gki-kernel.zip "$FALLBACK_URL"
+            fi
+          
+            # Unzip the downloaded kernel and remove the zip
+            echo "Unzipping the downloaded kernel..."
+            unzip gki-kernel.zip && rm gki-kernel.zip
+          
+            echo "Unpacking boot.img..."
+            FULL_PATH=$(pwd)/boot-5.10.img
+            echo "Unpacking using: $FULL_PATH"
+          fi
+
+          echo "Running unpack_bootimg.py..."
+          $UNPACK_BOOTIMG --boot_img="$FULL_PATH"
+          
+          # Create gzip of the Image file
+          gzip -n -k -f -9 ./Image > ./Image.gz
+          
+          echo "Building boot.img"
+          $MKBOOTIMG --header_version 4 --kernel Image --output boot.img --ramdisk out/ramdisk --os_version 12.0.0 --os_patch_level "${{ inputs.os_patch_level }}"
+          $AVBTOOL add_hash_footer --partition_name boot --partition_size $((64 * 1024 * 1024)) --image boot.img --algorithm SHA256_RSA2048 --key $BOOT_SIGN_KEY_PATH
+          if [ "${{ inputs.pong_only_mode }}" == "true" ]; then
+            cp ./boot.img ../pong-${{ inputs.kernelsu_variant }}-$KSUVER-${{ inputs.android_version }}-${{ inputs.kernel_version }}.${{ inputs.sub_level }}-${{ inputs.os_patch_level }}-boot.img
+            rm -f $FULL_PATH    # We don't need pong.img anymore. Delete it so it won't show up in the artifacts.
+          else
+            cp ./boot.img ../${{ inputs.kernelsu_variant }}-$KSUVER-${{ inputs.android_version }}-${{ inputs.kernel_version }}.${{ inputs.sub_level }}-${{ inputs.os_patch_level }}-boot.img
+          fi
+
+          if [ "${{ inputs.pong_only_mode }}" == "false" ]; then
+            echo "Building boot-gz.img"
+            $MKBOOTIMG --header_version 4 --kernel Image.gz --output boot-gz.img --ramdisk out/ramdisk --os_version 12.0.0 --os_patch_level "${{ inputs.os_patch_level }}"
+            $AVBTOOL add_hash_footer --partition_name boot --partition_size $((64 * 1024 * 1024)) --image boot-gz.img --algorithm SHA256_RSA2048 --key $BOOT_SIGN_KEY_PATH
+            cp ./boot-gz.img ../${{ inputs.kernelsu_variant }}-$KSUVER-${{ inputs.android_version }}-${{ inputs.kernel_version }}.${{ inputs.sub_level }}-${{ inputs.os_patch_level }}-boot-gz.img
+          
+            echo "Building boot-lz4.img"
+            $MKBOOTIMG --header_version 4 --kernel Image.lz4 --output boot-lz4.img --ramdisk out/ramdisk --os_version 12.0.0 --os_patch_level "${{ inputs.os_patch_level }}"
+            $AVBTOOL add_hash_footer --partition_name boot --partition_size $((64 * 1024 * 1024)) --image boot-lz4.img --algorithm SHA256_RSA2048 --key $BOOT_SIGN_KEY_PATH
+            cp ./boot-lz4.img ../${{ inputs.kernelsu_variant }}-$KSUVER-${{ inputs.android_version }}-${{ inputs.kernel_version }}.${{ inputs.sub_level }}-${{ inputs.os_patch_level }}-boot-lz4.img
+          fi
+
       - name: Create Kernel ZIP
+        if: ${{ inputs.pong_only_mode == false }}
         run: |
           echo "Creating kernel ZIP..."
           
@@ -565,14 +698,32 @@ jobs:
               cp ./$CONFIG/bazel-bin/common/kernel_aarch64/Image AnyKernel3/Image
             fi
           fi
-          
+
           # Create ZIP file
           cd AnyKernel3
           ZIP_NAME="${{ inputs.kernelsu_variant }}-$KSUVER-${{ inputs.android_version }}-${{ inputs.kernel_version }}.${{ inputs.sub_level }}-${{ inputs.os_patch_level }}-AnyKernel3.zip"
           echo "Creating zip file: $ZIP_NAME..."
           zip -r "../$ZIP_NAME" ./*
+
+          echo "Building boot-gz.img"
+          $MKBOOTIMG --header_version 4 --kernel Image.gz --output boot-gz.img
+          $AVBTOOL add_hash_footer --partition_name boot --partition_size $((64 * 1024 * 1024)) --image boot-gz.img --algorithm SHA256_RSA2048 --key $BOOT_SIGN_KEY_PATH
+          cp ./boot-gz.img ../${{ inputs.kernelsu_variant }}-$KSUVER-${{ inputs.android_version }}-${{ inputs.kernel_version }}.${{ inputs.sub_level }}-${{ inputs.os_patch_level }}-boot-gz.img
+          
+          echo "Building boot-lz4.img"
+          $MKBOOTIMG --header_version 4 --kernel Image.lz4 --output boot-lz4.img
+          $AVBTOOL add_hash_footer --partition_name boot --partition_size $((64 * 1024 * 1024)) --image boot-lz4.img --algorithm SHA256_RSA2048 --key $BOOT_SIGN_KEY_PATH
+          cp ./boot-lz4.img ../${{ inputs.kernelsu_variant }}-$KSUVER-${{ inputs.android_version }}-${{ inputs.kernel_version }}.${{ inputs.sub_level }}-${{ inputs.os_patch_level }}-boot-lz4.img
+          
+      - name: Compress all img files with gzip
+        if: ${{ inputs.pong_only_mode == false }}
+        run: |
+          for image in *.img; do
+            gzip -vnf9 "$image"
+          done
   
       - name: Upload Build Artifacts
+        if: ${{ inputs.pong_only_mode == false }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ inputs.kernelsu_variant }}-kernel-${{ env.CONFIG }}
@@ -580,3 +731,20 @@ jobs:
             *.zip
             *.img.gz
             *Image*
+
+      - name: Upload Pong Artifacts
+        if: ${{ inputs.pong_only_mode == true && inputs.use_pong_ramdisk == false }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.kernelsu_variant }}-kernel-${{ env.CONFIG }}-CI_#${{ github.run_number }}
+          path: |
+            *Image*
+
+      - name: Upload pong.img Artifacts
+        if: ${{ inputs.pong_only_mode == true && inputs.use_pong_ramdisk == true }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.kernelsu_variant }}-kernel-${{ env.CONFIG }}-CI_#${{ github.run_number }}
+          path: |
+            *.img.gz
+            *.img
