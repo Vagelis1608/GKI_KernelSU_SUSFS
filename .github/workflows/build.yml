@@ -455,9 +455,14 @@ jobs:
               perl -pi -e 's/build-timestamp = \$\(or \$\(KBUILD_BUILD_TIMESTAMP\), \$\(build-timestamp-auto\)\)/build-timestamp = "Sun Apr 20 04:20:00 UTC 2025"/' ./common/init/Makefile
           fi
 
-      - name: Add Build based configs
-        if: ${{ inputs.use_make == true }}
+      - name: Android 12 boot image build script
+        if: ${{ inputs.android_version == 'android12' }}
         run: |
+          if [ "${{ inputs.pong_only_mode == true && inputs.use_pong_ramdisk == false }}" == "true" ]; then
+            echo "Skipping boot img build script"
+            exit 0
+          fi
+          
           echo "Creating bootimgs folder and copying images..."
           if [ "${{ inputs.pong_only_mode }}" == "true" ]; then   # Pong uses an uncompressed Image
             cp ./$CONFIG/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image ./bootimgs
@@ -511,14 +516,9 @@ jobs:
           zip -r "../$ZIP_NAME" ./*
           rm ./Image.gz
 
-      - name: Android 12 boot image build script
-        if: ${{ inputs.android_version == 'android12' }}
+      - name: Add Build based configs
+        if: ${{ inputs.use_make == true }}
         run: |
-          if [ "${{ inputs.pong_only_mode == true && inputs.use_pong_ramdisk == false }}" == "true" ]; then
-            echo "Skipping boot img build script"
-            exit 0
-          fi
-          
           echo "Changing to configuration directory: $CONFIG..."
           cd "$CONFIG"
           echo "CONFIG_LTO_CLANG_THIN=y" >> ./common/arch/arm64/configs/gki_defconfig
