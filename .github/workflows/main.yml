@@ -11,7 +11,7 @@ on:
         description: 'Build with MAKE?'
         required: true
         type: boolean
-        default: true
+        default: false
       pong_only_mode:
         description: "Only build the gki that the Nothing Phone 2 uses (currently android12-5.10.226)"
         required: true
