@@ -20,6 +20,7 @@ on:
       use_make:
         required: true
         type: boolean
+        default: true
       pong_only_mode:
         required: false
         type: boolean
@@ -96,3 +97,5 @@ jobs:
       kernelsu_branch_other: ${{ inputs.kernelsu_branch_other || '' }}
       pong_only_mode: ${{ inputs.pong_only_mode }}
       use_pong_ramdisk: ${{ inputs.use_pong_ramdisk }}
+      use_make: ${{ inputs.use_make }}
+      
