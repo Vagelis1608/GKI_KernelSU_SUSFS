@@ -477,7 +477,7 @@ jobs:
         if: ${{ inputs.android_version == 'android12' }}
         run: |
           echo "Changing to configuration directory: $CONFIG..."
-          cd $CONFIG
+          cd bootimgs
           
           # Prepare sublevel for naming
           SUBLEVEL_FOR_NAME="${{ inputs.sub_level }}"
