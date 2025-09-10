@@ -657,7 +657,9 @@ jobs:
           
           # Create gzip of the Image file
           gzip -n -k -f -9 ./Image > ./Image.gz
-          
+
+      - name: Build imgs
+        run: |
           echo "Building boot.img"
           $MKBOOTIMG --header_version 4 --kernel Image --output boot.img --ramdisk out/ramdisk --os_version 12.0.0 --os_patch_level "${{ inputs.os_patch_level }}"
           $AVBTOOL add_hash_footer --partition_name boot --partition_size $((64 * 1024 * 1024)) --image boot.img --algorithm SHA256_RSA2048 --key $BOOT_SIGN_KEY_PATH
