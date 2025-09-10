@@ -541,6 +541,8 @@ jobs:
             $MKBOOTIMG --header_version 4 --kernel Image.lz4 --output boot-lz4.img --ramdisk out/ramdisk --os_version 12.0.0 --os_patch_level "${{ inputs.os_patch_level }}"
             $AVBTOOL add_hash_footer --partition_name boot --partition_size $((64 * 1024 * 1024)) --image boot-lz4.img --algorithm SHA256_RSA2048 --key $BOOT_SIGN_KEY_PATH
             cp ./boot-lz4.img ../${{ inputs.kernelsu_variant }}-$KSUVER-${{ inputs.android_version }}-${{ inputs.kernel_version }}.$SUBLEVEL_FOR_NAME-${{ inputs.os_patch_level }}-boot-lz4.img
+          else
+            rm -f ../pong.img # So it wont show up in the Artifact
           fi
 
       - name: Android 13/14/15 boot image build script
