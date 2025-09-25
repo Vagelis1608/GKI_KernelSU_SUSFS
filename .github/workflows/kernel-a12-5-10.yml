@@ -89,9 +89,9 @@ jobs:
     with:
       android_version: "android12"
       kernel_version: "5.10"
-      sub_level: "226"
-      os_patch_level: "2024-11"
-      revision: "r8"
+      sub_level: "233"
+      os_patch_level: "2025-02"
+      revision: "r3"
       kernelsu_variant: ${{ inputs.kernelsu_variant }}
       kernelsu_branch: ${{ inputs.kernelsu_branch }}
       kernelsu_branch_other: ${{ inputs.kernelsu_branch_other || '' }}
