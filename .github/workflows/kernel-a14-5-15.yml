@@ -7,29 +7,33 @@ permissions:
 on:
   workflow_call:
     inputs:
-      kernelsu_variant:
-        required: true
-        type: string
-      kernelsu_branch:
-        required: true
-        type: string
-      kernelsu_branch_other:
+      susfs_version:
         required: false
         type: string
-      use_make:
-        required: true
-        type: boolean
+        default: "v1.5.12"
 
 jobs:
   build-kernels-a14-5-15:
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
         include:
+          - sub_level: "110"
+            os_patch_level: "2023-06"
+          - sub_level: "110"
+            os_patch_level: "2023-08"
+          - sub_level: "110"
+            os_patch_level: "2023-09"
+          - sub_level: "131"
+            os_patch_level: "2023-11"
           - sub_level: "137"
             os_patch_level: "2024-01"
           - sub_level: "144"
+            os_patch_level: "2024-02"
+          - sub_level: "144"
             os_patch_level: "2024-03"
+          - sub_level: "148"
+            os_patch_level: "2024-04"
           - sub_level: "148"
             os_patch_level: "2024-05"
           - sub_level: "149"
@@ -38,6 +42,8 @@ jobs:
             os_patch_level: "2024-07"
           - sub_level: "158"
             os_patch_level: "2024-08"
+          - sub_level: "164"
+            os_patch_level: "2024-09"
           - sub_level: "167"
             os_patch_level: "2024-11"
           - sub_level: "170"
@@ -46,6 +52,10 @@ jobs:
             os_patch_level: "2025-03"
           - sub_level: "180"
             os_patch_level: "2025-05"
+          - sub_level: "185"
+            os_patch_level: "2025-07"
+          - sub_level: "192"
+            os_patch_level: "2025-10"
           - sub_level: "X"
             os_patch_level: "lts"
     uses: ./.github/workflows/build.yml
@@ -55,7 +65,4 @@ jobs:
       kernel_version: "5.15"
       sub_level: ${{ matrix.sub_level }}
       os_patch_level: ${{ matrix.os_patch_level }}
-      kernelsu_variant: ${{ inputs.kernelsu_variant }}
-      kernelsu_branch: ${{ inputs.kernelsu_branch }}
-      kernelsu_branch_other: ${{ inputs.kernelsu_branch_other || '' }}
-      use_make: ${{ inputs.use_make }}
+      susfs_version: ${{ inputs.susfs_version }}
