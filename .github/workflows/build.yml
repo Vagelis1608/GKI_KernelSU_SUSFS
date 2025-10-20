@@ -578,6 +578,7 @@ jobs:
           fi
 
       - name: Prepare AnyKernel3
+        if: ${{ inputs.pong_only_mode == false }}
         run: |
           # Copy Image from normal build locations
           if [ -f "./$CONFIG/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist/Image" ]; then
@@ -741,6 +742,7 @@ jobs:
           cp ./boot-lz4.img ../${{ env.FILE_NAME }}-boot-lz4.img
 
       - name: Upload AnyKernel3 Artifacts
+        if: ${{ inputs.pong_only_mode == false }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.FILE_NAME }}-AnyKernel3
@@ -757,6 +759,7 @@ jobs:
           compression-level: 9
           
       - name: Upload Boot Image (GZ)
+        if: ${{ inputs.pong_only_mode == false }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.FILE_NAME }}-boot-gz.img
@@ -765,6 +768,7 @@ jobs:
           compression-level: 9
           
       - name: Upload Boot Image (LZ4)
+        if: ${{ inputs.pong_only_mode == false }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.FILE_NAME }}-boot-lz4.img
@@ -781,6 +785,7 @@ jobs:
           compression-level: 9
           
       - name: Upload Raw Image (GZ)
+        if: ${{ inputs.pong_only_mode == false }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.FILE_NAME }}-Image.gz
@@ -789,6 +794,7 @@ jobs:
           compression-level: 9
           
       - name: Upload Raw Image (LZ4)
+        if: ${{ inputs.pong_only_mode == false }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.FILE_NAME }}-Image.lz4
@@ -823,11 +829,11 @@ jobs:
 
       - name: Add KSU Version
         run: |
-          # Get Wild_KSU commit
-          cd "$CONFIG/Wild_KSU"
+          # Get KernelSU-Next commit
+          cd "$CONFIG/KernelSU-Next"
           WKSU_COMMIT=$(git rev-parse HEAD)
           WKSU_URL="https://github.com/WildKernels/Wild_KSU/commit/$WKSU_COMMIT"
-          echo "- **Wild_KSU**: [$WKSU_COMMIT]($WKSU_URL)" >> $GITHUB_STEP_SUMMARY
+          echo "- **KernelSU-Next**: [$WKSU_COMMIT]($WKSU_URL)" >> $GITHUB_STEP_SUMMARY
           
       - name: Add BBG Version
         run: |
