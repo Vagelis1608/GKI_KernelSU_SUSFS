@@ -45,7 +45,11 @@ on:
 jobs:
   build-gki:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        apply_bypass: ["normal", "bypass"]
+        apply_bbg: ["bbg", "no-bbg"]
 
     steps:
       - name: Checkout repo
