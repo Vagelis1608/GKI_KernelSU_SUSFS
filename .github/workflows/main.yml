@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       pong_only_mode:
-        description: "Only build the gki that the Nothing Phone 2 uses (currently android12-5.10.226)"
+        description: "Only build the gki that the Nothing Phone 2 uses (currently android12-5.10.233)"
         required: true
         type: boolean
         default: true
@@ -26,44 +26,21 @@ on:
           - Pre-Release
           - Release
         default: Actions
-      kernel_variant:
-        description: 'Choose Kernel Variant'
+      susfs_version:
+        description: "Choose SUSFS version to build"
         required: true
         type: choice
         options:
-          - WKSU
-          - KSU
-          - NEXT
-        default: NEXT
-      kernelsu_branch:
-        description: "Choose ksu branch"
-        required: true
-        type: choice
-        options:
-          - Stable
-          - Dev
-          - Other
-        default: Stable
-      kernelsu_branch_other:
-        description: "If 'Other' is selected, specify your custom branch"
-        required: false
-        type: string
-        default: ""
-      use_make:
-        description: 'Build with MAKE?'
-        required: true
-        type: boolean
-        default: false
+          - v1.5.12
+          - v1.5.9
+        default: v1.5.12
 
 jobs:
   build-kernels-a12-5-10:
     uses: ./.github/workflows/kernel-a12-5-10.yml
     secrets: inherit
     with:
-      kernelsu_variant: ${{ inputs.kernel_variant }}
-      kernelsu_branch: ${{ inputs.kernelsu_branch }}
-      kernelsu_branch_other: ${{ inputs.kernelsu_branch_other }}
-      use_make: ${{ inputs.use_make }}
+      susfs_version: ${{ inputs.susfs_version }}
       pong_only_mode: ${{ inputs.pong_only_mode }}
       use_pong_ramdisk: ${{ inputs.use_pong_ramdisk }}
 
@@ -72,50 +49,35 @@ jobs:
     if: ${{ inputs.pong_only_mode == false }}
     secrets: inherit
     with:
-      kernelsu_variant: ${{ inputs.kernel_variant }}
-      kernelsu_branch: ${{ inputs.kernelsu_branch }}
-      kernelsu_branch_other: ${{ inputs.kernelsu_branch_other }}
-      use_make: ${{ inputs.use_make }}
+      susfs_version: ${{ inputs.susfs_version }}
 
   build-kernels-a13-5-15:
     uses: ./.github/workflows/kernel-a13-5-15.yml
     if: ${{ inputs.pong_only_mode == false }}
     secrets: inherit
     with:
-      kernelsu_variant: ${{ inputs.kernel_variant }}
-      kernelsu_branch: ${{ inputs.kernelsu_branch }}
-      kernelsu_branch_other: ${{ inputs.kernelsu_branch_other }}
-      use_make: ${{ inputs.use_make }}
+      susfs_version: ${{ inputs.susfs_version }}
 
   build-kernels-a14-5-15:
     uses: ./.github/workflows/kernel-a14-5-15.yml
     if: ${{ inputs.pong_only_mode == false }}
     secrets: inherit
     with:
-      kernelsu_variant: ${{ inputs.kernel_variant }}
-      kernelsu_branch: ${{ inputs.kernelsu_branch }}
-      kernelsu_branch_other: ${{ inputs.kernelsu_branch_other }}
-      use_make: ${{ inputs.use_make }}
+      susfs_version: ${{ inputs.susfs_version }}
 
   build-kernels-a14-6-1:
     uses: ./.github/workflows/kernel-a14-6-1.yml
     if: ${{ inputs.pong_only_mode == false }}
     secrets: inherit
     with:
-      kernelsu_variant: ${{ inputs.kernel_variant }}
-      kernelsu_branch: ${{ inputs.kernelsu_branch }}
-      kernelsu_branch_other: ${{ inputs.kernelsu_branch_other }}
-      use_make: ${{ inputs.use_make }}
+      susfs_version: ${{ inputs.susfs_version }}
 
   build-kernels-a15-6-6:
     uses: ./.github/workflows/kernel-a15-6-6.yml
     if: ${{ inputs.pong_only_mode == false }}
     secrets: inherit
     with:
-      kernelsu_variant: ${{ inputs.kernel_variant }}
-      kernelsu_branch: ${{ inputs.kernelsu_branch }}
-      kernelsu_branch_other: ${{ inputs.kernelsu_branch_other }}
-      use_make: ${{ inputs.use_make }}
+      susfs_version: ${{ inputs.susfs_version }}
 
   release:
     if: ${{ inputs.release_type == 'Release' || inputs.release_type == 'Pre-Release' }}
