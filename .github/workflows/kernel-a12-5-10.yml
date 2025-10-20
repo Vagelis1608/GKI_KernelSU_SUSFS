@@ -7,20 +7,10 @@ permissions:
 on:
   workflow_call:
     inputs:
-      kernelsu_variant:
-        required: true
-        type: string
-      kernelsu_branch:
-        required: true
-        type: string
-      kernelsu_branch_other:
+      susfs_version:
         required: false
         type: string
-        default: ""
-      use_make:
-        required: true
-        type: boolean
-        default: true
+        default: "v1.5.12"
       pong_only_mode:
         required: false
         type: boolean
@@ -32,41 +22,85 @@ on:
 
 jobs:
   build-kernels-a12:
-    if: ${{ inputs.pong_only_mode == false }}
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
         include:
+        # Deprecated series (Android 12 - 5.10)
+        - sub_level: "43"
+          os_patch_level: "2021-08"
+        - sub_level: "43"
+          os_patch_level: "2021-09"
+        - sub_level: "43"
+          os_patch_level: "2021-10"
+        - sub_level: "66"
+          os_patch_level: "2021-11"
+        - sub_level: "66"
+          os_patch_level: "2021-12"
+        - sub_level: "66"
+          os_patch_level: "2022-01"
+        - sub_level: "81"
+          os_patch_level: "2022-02"
+        - sub_level: "81"
+          os_patch_level: "2022-03"
+        - sub_level: "101"
+          os_patch_level: "2022-04"
+        - sub_level: "101"
+          os_patch_level: "2022-05"
+        - sub_level: "110"
+          os_patch_level: "2022-06"
+        - sub_level: "110"
+          os_patch_level: "2022-07"
+        - sub_level: "117"
+          os_patch_level: "2022-08"
+        - sub_level: "117"
+          os_patch_level: "2022-09"
+        - sub_level: "136"
+          os_patch_level: "2022-10"
+        - sub_level: "136"
+          os_patch_level: "2022-11"
+        - sub_level: "149"
+          os_patch_level: "2022-12"
+        - sub_level: "149"
+          os_patch_level: "2023-01"
+        - sub_level: "160"
+          os_patch_level: "2023-02"
+        - sub_level: "160"
+          os_patch_level: "2023-03"
         - sub_level: "168"
           os_patch_level: "2023-04"
-          revision: "r9"
+        - sub_level: "168"
+          os_patch_level: "2023-05"
+        - sub_level: "177"
+          os_patch_level: "2023-06"
+        - sub_level: "177"
+          os_patch_level: "2023-07"
+        - sub_level: "185"
+          os_patch_level: "2023-09"
+        - sub_level: "198"
+          os_patch_level: "2023-11"
         - sub_level: "198"
           os_patch_level: "2024-01"
-          revision: "r17"
         - sub_level: "205"
           os_patch_level: "2024-03"
-          revision: "r9"
         - sub_level: "209"
           os_patch_level: "2024-05"
-          revision: "r13"
         - sub_level: "218"
           os_patch_level: "2024-08"
-          revision: "r14"
+        # Active series
         - sub_level: "226"
           os_patch_level: "2024-11"
-          revision: "r9"
         - sub_level: "233"
           os_patch_level: "2025-02"
-          revision: "r3"
         - sub_level: "236"
           os_patch_level: "2025-05"
-          revision: "r3"
         - sub_level: "237"
           os_patch_level: "2025-06"
-          revision: "r1"
+        - sub_level: "240"
+          os_patch_level: "2025-09"
+        # LTS meta
         - sub_level: "X"
           os_patch_level: "lts"
-          revision: "r1"
     uses: ./.github/workflows/build.yml
     secrets: inherit
     with:
@@ -74,11 +108,7 @@ jobs:
       kernel_version: "5.10"
       sub_level: ${{ matrix.sub_level }}
       os_patch_level: ${{ matrix.os_patch_level }}
-      revision: ${{ matrix.revision }}
-      kernelsu_variant: ${{ inputs.kernelsu_variant }}
-      kernelsu_branch: ${{ inputs.kernelsu_branch }}
-      kernelsu_branch_other: ${{ inputs.kernelsu_branch_other || '' }}
-      use_make: ${{ inputs.use_make }}
+      susfs_version: ${{ inputs.susfs_version }}
 
   build-pong_only-kernel-a12:
     if: ${{ inputs.pong_only_mode == true }}
@@ -91,11 +121,6 @@ jobs:
       kernel_version: "5.10"
       sub_level: "233"
       os_patch_level: "2025-02"
-      revision: "r3"
-      kernelsu_variant: ${{ inputs.kernelsu_variant }}
-      kernelsu_branch: ${{ inputs.kernelsu_branch }}
-      kernelsu_branch_other: ${{ inputs.kernelsu_branch_other || '' }}
       pong_only_mode: ${{ inputs.pong_only_mode }}
       use_pong_ramdisk: ${{ inputs.use_pong_ramdisk }}
-      use_make: ${{ inputs.use_make }}
-      
+
