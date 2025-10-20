@@ -251,14 +251,15 @@ jobs:
           cd "$CONFIG/common"
           patch -p1 -F 3 < "../../kernel_patches/gki_ptrace.patch"
 
-      - name: Add KernelSU
+      - name: Add KSUNext
         run: |
           cd "$CONFIG"
-          curl -LSs "https://raw.githubusercontent.com/WildKernels/Wild_KSU/wild/kernel/setup.sh" | bash -s wild
+          echo "Adding KernelSU Next..."
+          curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -s next
 
       - name: Getting KernelSU Version
         run: |
-          cd "$CONFIG/Wild_KSU/kernel"
+          cd "$CONFIG/KernelSU-Next/kernel"
           BASE_VERSION=10200
           COMMIT_COUNT=$(/usr/bin/git rev-list --count HEAD)
           KSU_VERSION=$(expr $COMMIT_COUNT "+" $BASE_VERSION)
@@ -285,33 +286,33 @@ jobs:
 
           # Apply additional SUSFS patches for Android 13 5.15 compatibility
           if [[ "${{ inputs.android_version }}" == "android13" ]] && [[ "${{ inputs.kernel_version }}" == "5.15" ]] && (( ${{ inputs.sub_level }} <= 41 )); then
-            cp ../../kernel_patches/wild/susfs_fix_patches/v${SUSFS_VERSION}/fix_fdinfo.c.patch ./
+            cp ../../kernel_patches/next/susfs_fix_patches/v${SUSFS_VERSION}/fix_fdinfo.c.patch ./
             patch -p1 < fix_fdinfo.c.patch || true
-            cp ../../kernel_patches/wild/susfs_fix_patches/v${SUSFS_VERSION}/fix_namespace.c.patch ./
+            cp ../../kernel_patches/next/susfs_fix_patches/v${SUSFS_VERSION}/fix_namespace.c.patch ./
             patch -p1 < fix_namespace.c.patch || true
-            cp ../../kernel_patches/wild/susfs_fix_patches/v${SUSFS_VERSION}/fix_open.c.patch ./
+            cp ../../kernel_patches/next/susfs_fix_patches/v${SUSFS_VERSION}/fix_open.c.patch ./
             patch -p1 < fix_open.c.patch || true
             sed -i 's/i_uid_into_mnt(i_user_ns(inode), inode)/i_uid_into_mnt(inode->i_sb->s_user_ns, inode)/g' fs/susfs.c
           fi
 
-          # Apply KSU integration patches
-          cd ../Wild_KSU
+          # Apply KSUNext integration patches
+          cd ../KernelSU-Next
           cp ../../susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch .
           patch -p1 < 10_enable_susfs_for_ksu.patch || true
           
-          cp ../../kernel_patches/wild/susfs_fix_patches/v${SUSFS_VERSION}/fix_core_hook.c.patch ./
+          cp ../../kernel_patches/next/susfs_fix_patches/v${SUSFS_VERSION}/fix_core_hook.c.patch ./
           patch -p1 < fix_core_hook.c.patch
 
-          cp ../../kernel_patches/wild/susfs_fix_patches/v${SUSFS_VERSION}/fix_sucompat.c.patch ./
+          cp ../../kernel_patches/next/susfs_fix_patches/v${SUSFS_VERSION}/fix_sucompat.c.patch ./
           patch -p1 < fix_sucompat.c.patch
 
-          cp ../../kernel_patches/wild/susfs_fix_patches/v${SUSFS_VERSION}/fix_kernel_compat.c.patch ./
+          cp ../../kernel_patches/next/susfs_fix_patches/v${SUSFS_VERSION}/fix_kernel_compat.c.patch ./
           patch -p1 < fix_kernel_compat.c.patch
 
       - name: Apply Hooks Patches
         run: |
           cd "$CONFIG/common"
-          cp ../../kernel_patches/wild/hooks/scope_min_manual_hooks_v1.4.patch ./
+          cp ../../kernel_patches/next/hooks/scope_min_manual_hooks_v1.4.patch ./
           patch -p1 -F 3 < scope_min_manual_hooks_v1.4.patch
 
       - name: Scan and collect patch rejects
@@ -560,7 +561,7 @@ jobs:
             SUBLEVEL_FOR_NAME="$ACTUAL_SUBLEVEL"
           fi
           # Set artifact name base for consistent naming
-          ARTIFACT_BASE="WKSU-${{ env.KSUVER }}-SUSFS_${{ inputs.susfs_version }}-${{ inputs.android_version }}-${{ inputs.kernel_version }}.${SUBLEVEL_FOR_NAME}-${{ inputs.os_patch_level }}-${{ matrix.apply_bypass == 'bypass' && 'Bypass' || 'Normal' }}${{ matrix.apply_bbg == 'bbg' && '-BBG' || '' }}"
+          ARTIFACT_BASE="NEXT-${{ env.KSUVER }}-SUSFS_${{ inputs.susfs_version }}-${{ inputs.android_version }}-${{ inputs.kernel_version }}.${SUBLEVEL_FOR_NAME}-${{ inputs.os_patch_level }}-${{ matrix.apply_bypass == 'bypass' && 'Bypass' || 'Normal' }}${{ matrix.apply_bbg == 'bbg' && '-BBG' || '' }}"
           echo "ARTIFACT_BASE=$ARTIFACT_BASE" >> $GITHUB_ENV
           echo "FILE_NAME=$ARTIFACT_BASE" >> $GITHUB_ENV
 
