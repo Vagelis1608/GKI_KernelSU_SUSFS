@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       pong_only_mode:
-        description: "Only build the gki that the Nothing Phone 2 uses (currently android12-5.10.233)"
+        description: "Only build the gki that the Nothing Phone 2 uses (currently android12-5.10.236)"
         required: true
         type: boolean
         default: true
