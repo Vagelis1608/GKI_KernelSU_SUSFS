@@ -20,6 +20,7 @@ on:
         type: choice
         options:
           - All
+          - Pong
           - android12-5.10
           - android13-5.10
           - android13-5.15
@@ -27,7 +28,7 @@ on:
           - android14-6.1
           - android15-6.6
           - android16-6.12
-        default: All
+        default: Pong
       feature_set:
         description: "Feature Set"
         type: choice
@@ -117,6 +118,17 @@ jobs:
           path: ccache
           retention-days: 1
           if-no-files-found: warn
+
+  build-pong-android12-5-10:
+    needs: prepare-ccache
+    if: ${{ !inputs.test_release_notes && (inputs.kernel_build_version == 'Pong') }}
+    uses: ./.github/workflows/prepare.yml
+    with:
+      config_file: .github/config/pong.json
+      feature_set: ${{ inputs.feature_set || 'FULL' }}
+      ksu_branch: ${{ inputs.ksu_branch }}
+      susfs_commit: ${{ inputs.susfs_commit_android12-5-10 }}
+    secrets: inherit
 
   build-android12-5-10:
     needs: prepare-ccache
